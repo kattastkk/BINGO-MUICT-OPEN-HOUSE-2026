@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUICT Open House 2026 - BINGO</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #006C6C; /* สีน้ำเงินเข้ม มหิดล/ICT */
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .header {
+            margin-top: 3vh;
+            margin-bottom: 2vh;
+        }
+
+        .header h1 {
+            font-size: 4vw;
+            margin: 0;
+            color: #ffcc00; /* สีเหลืองทอง */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .status {
+            font-size: 1.5vw;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 10px 30px;
+            border-radius: 50px;
+            margin-bottom: 3vh;
+        }
+
+        .display-card {
+            background-color: #ffffff;
+            color: #333;
+            width: 90vw;
+            min-height: 40vh;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .question {
+            font-size: 3.2vw;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+
+        .answer {
+            font-size: 3vw;
+            font-weight: 700;
+            color: #e63946; /* สีแดงให้เด่นชัด */
+            text-transform: uppercase;
+            display: none; /* ซ่อนไว้ก่อนจนกว่าจะกดเฉลย */
+        }
+
+        .controls {
+            margin-top: 4vh;
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 2vw;
+            font-weight: 700;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #next-btn {
+            background-color: #2a9d8f;
+            color: white;
+        }
+
+        #next-btn:hover { background-color: #21867a; }
+
+        #reveal-btn {
+            background-color: #ffcc00;
+            color: #333;
+            display: none;
+        }
+
+        #reveal-btn:hover { background-color: #e6b800; }
+
+        .history-container {
+            margin-top: 4vh;
+            width: 90vw;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .history-title {
+            font-size: 1.5vw;
+            margin-bottom: 10px;
+            color: #ffcc00;
+        }
+
+        .history-list {
+            font-size: 1.5vw;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .history-item {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #0b396e;
+            padding: 5px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>MUICT OPEN HOUSE 2026 : BINGO</h1>
+    </div>
+
+    <div class="status">
+        คำถามที่: <span id="current-count">0</span> / 37
+    </div>
+
+    <div class="display-card">
+        <div class="question" id="question-text">พร้อมหรือยัง? กดปุ่มเพื่อสุ่มคำถามแรกเลย!</div>
+        <div class="answer" id="answer-text"></div>
+    </div>
+
+    <div class="controls">
+        <button id="next-btn" onclick="drawQuestion()">🎲 สุ่มคำถามถัดไป</button>
+        <button id="reveal-btn" onclick="revealAnswer()">👀 เฉลยคำตอบ</button>
+        <button id="reset-btn" onclick="resetGame()" style="display:none; background-color:#e63946; color:white;">🔄 เริ่มรอบใหม่</button>
+    </div>
+
+    <div class="history-container">
+        <div class="history-title">ประวัติคำตอบที่ออกไปแล้ว (เพื่อให้น้องๆ เช็กกระดานตามหลัง)</div>
+        <div class="history-list" id="history-list">
+            <!-- คำตอบที่สุ่มแล้วจะมาโผล่ตรงนี้ -->
+        </div>
+    </div>
+
+    <script>
+        // คลังคำถาม-คำตอบ อัปเดตล่าสุด 37 ข้อ
+        const rawPool = [
+            { q: "หลักสูตรวิทยาศาสตรบัณฑิต สาขาวิทยาการและเทคโนโลยีดิจิทัล มีตัวย่อว่าอะไร", a: "DST" },
+            { q: "ตัวย่อของคณะเทคโนโลยีสารสนเทศและการสื่อสาร", a: "ICT" },
+            { q: "คณะ ICT มหิดล มีทั้งหมดกี่สาขา", a: "2" },
+            { q: "คณะ ICT มหิดล ตั้งอยู่ที่วิทยาเขตไหน", a: "ศาลายา" },
+            { q: "คณะ ICT ถือเป็นคณะในลำดับที่เท่าไหร่ของมหาวิทยาลัยมหิดล", a: "20" },
+            { q: "สีประจำคณะ ICT มหิดล คือสีอะไร", a: "สีเขียวน้ำทะเลและสีครีม" },
+            { q: "Strap ประจำตัวของพี่ๆ นักศึกษา ICT ชั้นปีที่ 1 คือสีอะไร", a: "สีเหลือง" },
+            { q: "Strap ประจำตัวของพี่ๆ นักศึกษา ICT ชั้นปีที่ 2 คือสีอะไร", a: "สีชมพู" },
+            { q: "Strap ประจำตัวของพี่ๆ นักศึกษา ICT ชั้นปีที่ 3 คือสีอะไร", a: "สีเขียว" },
+            { q: "Strap ประจำตัวของพี่ๆ นักศึกษา ICT ชั้นปีที่ 4 คือสีอะไร", a: "สีฟ้า" },
+            { q: "นักศึกษาสาขา DST ชั้นปีที่ 3 จะมีกลุ่มวิชาเลือกเฉพาะด้านให้เลือกเรียนทั้งหมดกี่กลุ่ม", a: "4 กลุ่ม" },
+            { q: "กลุ่มวิชาเลือกเฉพาะด้าน DST ที่ศึกษาเกี่ยวกับการเชื่อมต่ออุปกรณ์ เครื่องใช้ และสมาร์ทดีไวซ์ต่างๆ เข้ากับโครงข่ายอินเทอร์เน็ต คือกลุ่มใด", a: "IoT" },
+            { q: "กลุ่มวิชาเลือกเฉพาะด้าน DST ที่เน้นการวิเคราะห์และจัดการข้อมูลขนาดใหญ่เพื่อนำไปใช้ประโยชน์ คือกลุ่มใด", a: "Data Science" },
+            { q: "กลุ่มวิชาเลือกเฉพาะด้าน DST ที่เรียนเกี่ยวกับการปกป้องระบบ เครือข่าย และข้อมูลจากการถูกโจมตีทางไซเบอร์ คือกลุ่มใด", a: "Cybersecurity" },
+            { q: "กลุ่มวิชาเลือกเฉพาะด้าน DST ที่ศึกษาครอบคลุมตั้งแต่การออกแบบ พัฒนา และบำรุงรักษาระบบโปรแกรมหรือแอปพลิเคชัน คือกลุ่มใด", a: "Software Engineering" },
+            { q: "หลักสูตร ICT นานาชาติ มีสาขาวิชาเฉพาะทางหรือ Specialization ให้นักศึกษาเลือกเรียนทั้งหมดกี่สาขา", a: "8 สาขา" },
+            { q: "สาขาที่เน้นทฤษฎีวิทยาการคอมพิวเตอร์ การออกแบบอัลกอริทึมและทฤษฎีการคำนวณ คือสาขาอะไร", a: "Computer Science (CS)" },
+            { q: "สาขาที่เรียนรู้การพัฒนาซอฟต์แวร์อย่างเป็นระบบ ครอบคลุมถึงระเบียบวิธีแบบ Agile และ Scrum คือสาขาอะไร", a: "Software Engineering (SE)" },
+            { q: "สาขาที่ประยุกต์ใช้ไอทีกับระบบสาธารณสุข รวมถึงการรักษาความปลอดภัยของข้อมูลทางการแพทย์ คือสาขาอะไร", a: "Health Information Technology (HT)" },
+            { q: "สาขาที่ศึกษาเกี่ยวกับ Machine Learning, Deep Learning และการประมวลผลภาษาธรรมชาติ (NLP) คือสาขาอะไร", a: "Artificial Intelligence (AI)" },
+            { q: "ปัจจุบันหลักสูตรวิทยาศาสตรบัณฑิต สาขาวิทยาการและเทคโนโลยีดิจิทัล (DST) ดำเนินมาถึงรุ่นที่เท่าไหร่", a: "6" },
+            { q: "ปัจจุบันหลักสูตรเทคโนโลยีสารสนเทศและการสื่อสาร (ICT) ดำเนินมาถึงรุ่นที่เท่าไหร่", a: "24" },
+            { q: "กีฬายอดฮิตของเด็ก ICT มหิดลคืออะไร", a: "เทเบิลเทนนิส" },
+            { q: "หากต้องการเดินทางมาคณะ ICT ต้องขึ้นรถแทรมสายสีอะไร", a: "สีเขียว" },
+            { q: "ศาสตร์ที่ช่วยให้คอมพิวเตอร์สามารถมองเห็นและประมวลผลจากภาพหรือวิดีโอได้", a: "Computer Vision" },
+            { q: "การสอนให้คอมพิวเตอร์เรียนรู้และหาแพทเทิร์นจากข้อมูลด้วยตัวเอง เรียกว่าอะไร", a: "Machine Learning" },
+            { q: "อุปกรณ์ที่เปรียบเสมือนสมองของคอมพิวเตอร์ ทำหน้าที่ประมวลผลข้อมูล", a: "CPU" },
+            { q: "ภาษาโปรแกรมมิ่งที่มักใช้ทำงานให้เว็บมีลูกเล่น", a: "JavaScript" },
+            { q: "โปรแกรมคอมพิวเตอร์ที่ออกแบบมาเพื่อสนทนากับมนุษย์ผ่านข้อความ โดยเลียนแบบภาษาและการโต้ตอบของคน", a: "Chatbot" },
+            { q: "คำสั่ง คำถาม หรือข้อความที่เราพิมพ์ป้อนเข้าไปใน AI เพื่อให้มันสร้างการตอบสนองกลับมา", a: "Prompt" },
+            { q: "แพลตฟอร์มสำหรับเก็บและจัดการ Source Code (มีโลโก้รูปแมวหมึก)", a: "GitHub" },
+            { q: "ภาษาการเขียนโปรแกรมระดับสูงที่ใช้งานง่ายและอ่านเข้าใจได้ง่ายเหมือนภาษาอังกฤษ", a: "Python" },
+            { q: "AI แชทบอทสุดอัจฉริยะจากค่าย Google", a: "Gemini" },
+            { q: "ชื่อของ AI Chatbot ที่โด่งดังที่สุดในโลก พัฒนาโดย OpenAI และขับเคลื่อนด้วยเทคโนโลยี Large Language Model", a: "ChatGPT" },
+            { q: "โปรแกรมเขียนโค้ดขวัญใจโปรแกรมเมอร์จากค่าย Microsoft ที่มีโลโก้สีฟ้า", a: "VS code" },
+            { q: "หน่วยย่อยที่สุดที่ AI ใช้ประมวลผลภาษา เปรียบเสมือน \"พยางค์\" หรือ \"คำ\" สำหรับ AI", a: "token" },
+            { q: "ข้อความประโยคแรกสุดคลาสสิกที่โปรแกรมเมอร์มือใหม่ทุกคนต้องลอง print เพื่อเป็นการไหว้ครู", a: "Hello World!" }
+        ];
+
+        let availableQuestions = [];
+        let historyAnswers = [];
+        let currentQ = null;
+        let questionCount = 0;
+
+        // ฟังก์ชันเริ่มเกม / สลับลำดับคำถาม
+        function initGame() {
+            // Copy array และ Shuffle
+            availableQuestions = [...rawPool].sort(() => Math.random() - 0.5);
+            historyAnswers = [];
+            questionCount = 0;
+            currentQ = null;
+            
+            updateUI();
+            
+            document.getElementById('question-text').innerText = "พร้อมหรือยัง? กดปุ่มเพื่อสุ่มคำถามแรกเลย!";
+            document.getElementById('answer-text').style.display = 'none';
+            document.getElementById('history-list').innerHTML = '';
+            
+            document.getElementById('next-btn').style.display = 'inline-block';
+            document.getElementById('reveal-btn').style.display = 'none';
+            document.getElementById('reset-btn').style.display = 'none';
+        }
+
+        // ฟังก์ชันสุ่มคำถามถัดไป
+        function drawQuestion() {
+            if (availableQuestions.length === 0) {
+                document.getElementById('question-text').innerText = "หมดคลังคำถามแล้ว!";
+                document.getElementById('next-btn').style.display = 'none';
+                document.getElementById('reset-btn').style.display = 'inline-block';
+                return;
+            }
+
+            currentQ = availableQuestions.pop();
+            questionCount++;
+            
+            document.getElementById('question-text').innerText = currentQ.q;
+            document.getElementById('answer-text').innerText = currentQ.a;
+            document.getElementById('answer-text').style.display = 'none'; // ซ่อนคำตอบไว้ก่อน
+
+            document.getElementById('next-btn').style.display = 'none';
+            document.getElementById('reveal-btn').style.display = 'inline-block';
+            
+            updateUI();
+        }
+
+        // ฟังก์ชันเฉลยคำตอบ
+        function revealAnswer() {
+            document.getElementById('answer-text').style.display = 'block';
+            
+            // เพิ่มคำตอบลงในประวัติ
+            historyAnswers.push(currentQ.a);
+            renderHistory();
+
+            document.getElementById('reveal-btn').style.display = 'none';
+            
+            if(availableQuestions.length > 0) {
+                document.getElementById('next-btn').style.display = 'inline-block';
+                document.getElementById('next-btn').innerText = '🎲 สุ่มคำถามถัดไป';
+            } else {
+                document.getElementById('reset-btn').style.display = 'inline-block';
+            }
+        }
+
+        function renderHistory() {
+            const historyContainer = document.getElementById('history-list');
+            historyContainer.innerHTML = '';
+            // นำคำตอบล่าสุดไว้หน้าสุด
+            const reversedHistory = [...historyAnswers].reverse();
+            reversedHistory.forEach(ans => {
+                const span = document.createElement('span');
+                span.className = 'history-item';
+                span.innerText = ans;
+                historyContainer.appendChild(span);
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('current-count').innerText = questionCount;
+        }
+
+        function resetGame() {
+            if(confirm("แน่ใจนะว่าจะเริ่มรอบใหม่? ข้อมูลการสุ่มรอบนี้จะถูกล้างทิ้งทั้งหมด")) {
+                initGame();
+            }
+        }
+
+        // เริ่มเกมตอนเปิดเว็บ
+        initGame();
+    </script>
+</body>
+</html>
